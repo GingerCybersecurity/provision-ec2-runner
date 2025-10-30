@@ -1,0 +1,81 @@
+name: 'Provision EC2 Runner'
+description: 'Launches and configures an EC2 instance for GitHub self-hosted runners from a specified AMI'
+
+inputs:
+  github-token:
+    required: true
+    description: 'GitHub Token with permissions to register runners'
+
+  ami-id:
+    required: true
+    description: 'Amazon Machine Image (AMI) identifier for the EC2 instance'
+
+  instance-type:
+    required: false
+    description: 'EC2 instance type specification'
+    default: 't2.micro'
+
+  iam-instance-profile:
+    required: false
+    description: 'IAM instance profile name for EC2 instance permissions (requires appropriate AWS permissions)'
+
+  key-name:
+    required: false
+    description: 'SSH key pair name for EC2 instance access'
+
+  subnet-id:
+    required: true
+    description: 'Target subnet ID for EC2 instance deployment (must be in the same VPC as security group)'
+
+  security-group-id:
+    required: true
+    description: 'Security group ID for EC2 instance (must be in the same VPC as subnet). Only requires outbound HTTPS access'
+
+  startup-commands:
+    required: false
+    description: 'Custom initialization commands to override default startup sequence'
+
+  tag-name:
+    required: true
+    description: 'Resource identification tag name for instance management'
+
+  tag-value:
+    required: true
+    description: 'Resource identification tag value for instance management'
+
+  wait-for-ready:
+    required: false
+    description: 'Flag to determine if action should wait for instance readiness'
+    default: 'true'
+
+outputs:
+  runner-label:
+    description: 'Unique identifier assigned to the runner for job targeting and GitHub management'
+    value: ${{ steps.launch-ec2-instance.outputs.runner-label }}
+
+  instance-id:
+    description: 'EC2 instance identifier for lifecycle management operations'
+    value: ${{ steps.launch-ec2-instance.outputs.instance-id }}
+
+  instance-state:
+    description: 'Final EC2 instance state after provisioning completion'
+    value: ${{ steps.launch-ec2-instance.outputs.instance-state }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: launch-ec2-instance
+      shell: bash
+      run: ${{ github.action_path }}/launch-instance.sh
+      env:
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_AMI_ID: ${{ inputs.ami-id }}
+        INPUT_INSTANCE_TYPE: ${{ inputs.instance-type }}
+        INPUT_IAM_INSTANCE_PROFILE: ${{ inputs.iam-instance-profile }}
+        INPUT_KEY_NAME: ${{ inputs.key-name }}
+        INPUT_SUBNET_ID: ${{ inputs.subnet-id }}
+        INPUT_SECURITY_GROUP_ID: ${{ inputs.security-group-id }}
+        INPUT_STARTUP_COMMANDS: ${{ inputs.startup-commands }}
+        INPUT_TAG_NAME: ${{ inputs.tag-name }}
+        INPUT_TAG_VALUE: ${{ inputs.tag-value }}
+        INPUT_WAIT_FOR_READY: ${{ inputs.wait-for-ready }}
