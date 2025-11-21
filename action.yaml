@@ -2,13 +2,21 @@ name: 'Provision EC2 Runner'
 description: 'Launches and configures an EC2 instance for GitHub self-hosted runners from a specified AMI'
 
 inputs:
-  github-token:
-    required: true
-    description: 'GitHub Token with permissions to register runners'
-
   ami-id:
     required: true
     description: 'Amazon Machine Image (AMI) identifier for the EC2 instance'
+
+  github-runner-registration-token:
+    required: false
+    description: 'If provided, will be used to register an ephemeral runner'
+
+  runner-name:
+    required: false
+    description: 'The name used when pre-registering the runner. Required if token not provided'
+
+  runner-label:
+    required: false
+    description: 'The identifying label used when pre-registering the runner. Required if token not provided'
 
   instance-type:
     required: false
@@ -68,8 +76,10 @@ runs:
       shell: bash
       run: ${{ github.action_path }}/launch-instance.sh
       env:
-        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_AMI_ID: ${{ inputs.ami-id }}
+        INPUT_GITHUB_RUNNER_REGISTRATION_TOKEN: ${{ inputs.github-runner-registration-token }}
+        INPUT_RUNNER_NAME: ${{ inputs.runner-name }}
+        INPUT_RUNNER_LABEL: ${{ inputs.runner-label }}
         INPUT_INSTANCE_TYPE: ${{ inputs.instance-type }}
         INPUT_IAM_INSTANCE_PROFILE: ${{ inputs.iam-instance-profile }}
         INPUT_KEY_NAME: ${{ inputs.key-name }}

@@ -1,16 +1,29 @@
 # Provision EC2 Runner
 Launch EC2 instance from AMI for GitHub self-hosted runner
 
-This action works in conjunction with [terminate-ec2-runner](https://github.com/gingercybersecurity/terminate-ec2-runner) for complete lifecycle management.
+This action works in conjunction with [terminate-ec2-runner](https://github.com/gingercybersecurity/terminate-ec2-runner) for complete runner lifecycle management.
+
+**Please Note**: GitHub recommends that you only use self-hosted runners with private repositories. This is because forks of your public repository can potentially run dangerous code on your self-hosted runner machine by creating a pull request that executes the code in a workflow.
+For more security advice, please reference the [GitHub Secure Use Reference](https://docs.github.com/en/actions/reference/security/secure-use)
 
 ## Getting started
 
-### 1. GitHub Authentication
-You need a GitHub token with appropriate permissions. Choose one of these options:
+There are two ways to use this action:
+1. Register EC2 instance runners on-the-fly
+   * Pros: Can run many jobs simultaneously because each runner is registered under a unique name
+   * Cons: Must also be able to generate a runner registration token also on-the-fly, which means giving your GitHub Action powerful privileges for your repo
+2. Pre-configure an AMI as a runner
+   * Pros: No need to give your Action special GitHub privileges
+   * Cons: Can spin up one copy of the AMI into an instance at a time because the runner's unique name is set at the time of pre-configuring
+
+### 1. GitHub Authentication (skip if pre-configuring the AMI)
+You need a GitHub token with appropriate permissions if you want to launch runners on-the-fly. Choose one of these options:
 
 #### Option A: GitHub App (Recommended for Organizations)
 - Best for organization-wide access and long-term integrations
-- Required Permission: "Self-hosted runners" (write)
+- Required Permission:
+  - "Organization Permissions: Self-hosted runners" (write) for creating an organization-wide runner
+  - "Repository Permissions: Administration" (write) for creating a repository-scoped runner
 - Use [create-github-app-token](https://github.com/actions/create-github-app-token) to generate temporary tokens
 - [Learn more about GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps)
 
@@ -45,7 +58,7 @@ iam:PassRole
 Security Best Practices:
 - Implement tag-based access control
 - Use [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) for AWS authentication
-- See `examples/example-workflow.yml` for implementation
+- See workflow examples in `examples/` for implementation
 
 ### 3. EC2 Image Setup
 
@@ -60,7 +73,7 @@ Creation Options:
     - [Packer](https://www.packer.io/)
     - [EC2 Image Builder](https://aws.amazon.com/image-builder/)
 
-Reference `examples/prep-ubuntu-runner.sh` for Ubuntu runner setup commands.
+Reference `examples/prepare-ubuntu-image*.sh` for Ubuntu runner setup commands.
 
 ### 4. Network Security
 
@@ -77,7 +90,7 @@ Security Group Requirements:
 4. Consider [self-hosted runner security guidelines](https://docs.github.com/en/actions/hosting-your-own-runners/about-self-hosted-runners#self-hosted-runner-security)
 
 Notes:
-- Runners are configured as ephemeral by default
+- Runners are configured as ephemeral by default if configured on-the-fly
 - Custom startup commands available via `startup-commands` parameter
 - Recommended for private repositories only
 - Default configuration in `launch-instance.sh`

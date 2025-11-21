@@ -10,7 +10,6 @@ jobs:
       runner-label: ${{ steps.start-ec2-runner.outputs.runner-label }}
       instance-id: ${{ steps.start-ec2-runner.outputs.instance-id }}
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/create-github-app-token@v1 # For configuring the self-hosted runner
         id: generate_token
         with:
@@ -23,18 +22,46 @@ jobs:
           audience: sts.amazonaws.com
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/YourGitHubActionsRoleHere
           aws-region: ${{ vars.AWS_REGION }}
+      - name: Get runner registration token
+        id: generate_runner_registration_token
+        run: |
+          owner_repo="${GITHUB_REPOSITORY}"  # Format: owner/repo
+          github_token=${{ steps.generate_token.outputs.token }}
+
+          response=$(curl -L -X POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${github_token}" \
+              "https://api.github.com/repos/${owner_repo}/actions/runners/registration-token")
+
+          # Check if the curl command was successful
+          if [ $? -eq 0 ]; then
+              # Extract token using string manipulation (basic approach)
+              token=$(echo "$response" | grep -o '"token":\s*"[^"]*' | cut -d'"' -f4)
+
+              if [ -n "$token" ]; then
+                  echo "::add-mask::$token"
+                  echo "runner_registration_token=$token" >> "$GITHUB_OUTPUT"
+              else
+                  echo "Error: Failed to extract token from response $response" >&2
+                  exit 1
+              fi
+          else
+              echo "Error: Failed to get GitHub Registration Token" >&2
+              exit 1
+          fi
       - name: Launch EC2 Runner
         id: start-ec2-runner
         uses: gingercybersecurity/provision-ec2-runner
         with:
-          github-token: ${{ steps.generate_token.outputs.token }}
-          subnet-id: subnet-abcde
-          security-group-id: sg-abcde
-          ami-id: ami-abcde
+          github-runner-registration-token: ${{ steps.generate_runner_registration_token.outputs.runner_registration_token }}
+          subnet-id: ${{ vars.AWS_SUBNET_ID }} # subnet-abcde
+          security-group-id: ${{ vars.AWS_SECURITY_GROUP_ID }} # sg-abcde
+          ami-id: ${{ vars.AWS_AMI_ID }} # ami-abcde
           instance-type: t3.micro
-          key-name: github-runner
+          key-name: ${{ vars.AWS_KEY_NAME }}
           tag-name: 'ManagedBy'
           tag-value: 'github-actions'
+          iam-instance-profile: 'CloudWatchLogger'
 
   test:
     name: Run Tests
@@ -54,7 +81,6 @@ jobs:
       - test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/create-github-app-token@v1
         id: generate_token
         with:
@@ -71,6 +97,4 @@ jobs:
       - name: Run EC2 Stop
         uses: gingercybersecurity/terminate-ec2-runner
         with:
-          github-token: ${{ steps.generate_token.outputs.token }}
-          runner-label: ${{ needs.start-runner.outputs.runner-label }}
           instance-id: ${{ needs.start-runner.outputs.instance-id }}
