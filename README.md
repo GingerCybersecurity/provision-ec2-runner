@@ -1,10 +1,12 @@
 # Provision EC2 Runner
-Launch EC2 instance from AMI for GitHub self-hosted runner
+Launch EC2 instance from AMI for GitHub self-hosted repository-level runner
 
 This action works in conjunction with [terminate-ec2-runner](https://github.com/gingercybersecurity/terminate-ec2-runner) for complete runner lifecycle management.
 
 **Please Note**: GitHub recommends that you only use self-hosted runners with private repositories. This is because forks of your public repository can potentially run dangerous code on your self-hosted runner machine by creating a pull request that executes the code in a workflow.
 For more security advice, please reference the [GitHub Secure Use Reference](https://docs.github.com/en/actions/reference/security/secure-use)
+
+Note: Interested in organization-level runners?  [Open an Issue](https://github.com/GingerCybersecurity/provision-ec2-runner/issues) to express interest!
 
 ## Getting started
 
