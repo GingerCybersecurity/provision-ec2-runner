@@ -1,6 +1,10 @@
 name: 'Provision EC2 Runner'
 description: 'Launches and configures an EC2 instance for GitHub self-hosted runners from a specified AMI'
 
+branding:
+  icon: 'cloud'
+  color: 'orange'
+
 inputs:
   ami-id:
     required: true
