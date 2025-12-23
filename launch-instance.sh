@@ -78,7 +78,10 @@ INSTANCE_INFO=$(aws ec2 run-instances \
     --security-group-ids "$INPUT_SECURITY_GROUP_ID" \
     ${INPUT_KEY_NAME:+--key-name "$INPUT_KEY_NAME"} \
     --associate-public-ip-address \
-    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=${RUNNER_NAME}},{Key=${INPUT_TAG_NAME},Value=${INPUT_TAG_VALUE}}]" \
+    --tag-specifications \
+            "ResourceType=instance,Tags=[{Key=Name,Value=${RUNNER_NAME}},{Key=${INPUT_TAG_NAME},Value=${INPUT_TAG_VALUE}}]" \
+            "ResourceType=network-interface,Tags=[{Key=${INPUT_TAG_NAME},Value=${INPUT_TAG_VALUE}}]" \
+            "ResourceType=volume,Tags=[{Key=${INPUT_TAG_NAME},Value=${INPUT_TAG_VALUE}}]" \
     ${STARTUP_COMMANDS:+--user-data "$STARTUP_COMMANDS"} \
     ${INPUT_IAM_INSTANCE_PROFILE:+--iam-instance-profile "Name=$INPUT_IAM_INSTANCE_PROFILE"} \
     --output json)
